@@ -1,0 +1,28 @@
+apiVersion: fn.kpt.dev/v1alpha1
+kind: StarlarkRun
+metadata: # kpt-merge: /generate-rbac-group
+  name: generate-rbac-group
+  annotations:
+    config.kubernetes.io/local-config: "true"
+source: |-
+  def isMatchGvkn(r, apiVersion, kind, name):
+    return r["apiVersion"] == apiVersion and r["kind"] == kind and r.get("metadata").get("name") == name
+
+  def get_domain(resources):
+    # domain can come from other resources as well
+    return "acme.com"
+
+  def generate_group(resources, role):
+    group = ""
+    pkg_context = {}
+
+    domain = get_domain(resources)
+    for r in resources:
+      if isMatchGvkn(r, "v1", "ConfigMap", "kptfile.kpt.dev"):
+        namespace = r["data"]["name"]
+        pkg_context = r
+
+    group = namespace + "-" + role + "@" + domain
+    pkg_context["data"]["group"] = group
+
+  generate_group(ctx.resource_list["items"], "app-admin")

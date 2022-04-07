@@ -1,0 +1,31 @@
+apiVersion: kpt.dev/v1
+kind: Kptfile
+metadata:
+  name: hippa-tenant
+upstream:
+  type: git
+  git:
+    repo: git@github.com:platkrm/sunil-pkg-catalog
+    directory: /service-mesh-tenant
+    ref: main
+  updateStrategy: resource-merge
+upstreamLock:
+  type: git
+  git:
+    repo: git@github.com:platkrm/sunil-pkg-catalog
+    directory: /service-mesh-tenant
+    ref: main
+    commit: 99d14f684166dc6f05f1e5743e9b83a3c6e50820
+info:
+  description: Base tenant package
+pipeline:
+  mutators:
+    - image: gcr.io/kpt-fn/starlark:v0.3.0
+      configPath: gen-rbac-group.yaml
+    - image: gcr.io/kpt-fn/starlark:v0.3.0
+      configPath: set-namespace.yaml
+    - image: gcr.io/kpt-fn/apply-replacements:unstable
+      configPath: ensure-rbac.yaml
+  validators:
+    - image: gcr.io/kpt-fn/starlark:v0.3.0
+      configPath: ensure-single-namespace.yaml
